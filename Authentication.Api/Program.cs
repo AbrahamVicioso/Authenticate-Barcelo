@@ -8,10 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-
 builder.Services.AddPersistenceLayer();
 
 // Configurar CORS
@@ -25,14 +22,35 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Configurar Identity ANTES de Authentication
 builder.Services
-    .AddAuthentication()
-    .AddBearerToken(IdentityConstants.BearerScheme);
+    .AddIdentityCore<User>(options =>
+    {
+        options.Lockout.AllowedForNewUsers = false;
 
-builder.Services
-    .AddIdentityCore<User>(options => options.SignIn.RequireConfirmedEmail = false)
+        // Configuración de Sign In
+        options.SignIn.RequireConfirmedEmail = false;
+        options.SignIn.RequireConfirmedAccount = false;
+
+        // Configuración de Password (ajusta según tus necesidades)
+        options.Password.RequireDigit = false;
+        options.Password.RequiredLength = 6;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireLowercase = false;
+    })
     .AddEntityFrameworkStores<AuthenticationDbContext>()
     .AddApiEndpoints();
+
+// Authentication debe ir DESPUÉS de Identity
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = IdentityConstants.BearerScheme;
+        options.DefaultChallengeScheme = IdentityConstants.BearerScheme;
+        options.DefaultScheme = IdentityConstants.BearerScheme;
+    })
+    .AddBearerToken(IdentityConstants.BearerScheme);
 
 builder.Services.AddAuthorization();
 
@@ -46,14 +64,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseRouting();
-
-// Usar CORS (debe ir antes de Authentication y Authorization)
+// ORDEN CORRECTO DEL MIDDLEWARE
 app.UseCors("AllowAll");
-
 app.UseAuthentication();
 app.UseAuthorization();
 
+// MapIdentityApi y MapControllers deben ir al final
 app.MapIdentityApi<User>();
 app.MapControllers();
 
