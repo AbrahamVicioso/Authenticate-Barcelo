@@ -2,6 +2,7 @@
 using Authentication.Persistence;
 using Authentication.Persistence.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,5 +43,12 @@ app.UseAuthorization();
 app.MapIdentityApi<User>();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<AuthenticationDbContext>();
+    await context.Database.EnsureCreatedAsync();
+}
 
 app.Run();

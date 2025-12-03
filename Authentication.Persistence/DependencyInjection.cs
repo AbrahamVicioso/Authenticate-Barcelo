@@ -16,7 +16,7 @@ namespace Authentication.Persistence
         {
             services.AddDbContext<AuthenticationDbContext>(opt =>
             {
-                opt.UseSqlServer("name=AuthenticationDbConnection");
+                opt.UseSqlServer("name=DefaultConnection");
             });
 
             return services;
