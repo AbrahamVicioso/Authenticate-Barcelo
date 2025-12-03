@@ -7,12 +7,23 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 builder.Services.AddPersistenceLayer();
+
+// Configurar CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 builder.Services
     .AddAuthentication()
@@ -33,15 +44,17 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-
 app.UseHttpsRedirection();
+
 app.UseRouting();
+
+// Usar CORS (debe ir antes de Authentication y Authorization)
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapIdentityApi<User>();
-
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
